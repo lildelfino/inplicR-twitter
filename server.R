@@ -397,6 +397,8 @@ deleteButtonColumnKW <- function(df, id, ...) {
                 ))
 }
 
+token <- myTwitterToken()
+
 shinyServer(function(input, output, session) {
 
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
@@ -436,12 +438,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$old, {
 
     #vérification qu'un token existe réellement
-    if (!is.na(get_token()[["app"]][["secret"]])) {
-      get_token()
-      removeModal()
-    } else {
-      showModal(dataModal(failed = TRUE))
-    }
+    get_token()
   })
 
   #modification du token ou création d'un token
