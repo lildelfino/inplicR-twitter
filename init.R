@@ -1,4 +1,4 @@
-my_packages = c("DT", "shinydashboard","rtweet","httr","purrr","graphics","stringr","tm","syuzhet","dplyr","wordcloud","RColorBrewer","SPARQL","splus2R")
+my_packages = c("DT", "shinydashboard","rtweet","httr","purrr","graphics","stringr","tm","syuzhet","dplyr","wordcloud","RColorBrewer","SPARQL","splus2R","textclean")
 
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
