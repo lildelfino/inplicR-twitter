@@ -168,9 +168,11 @@ searchTwitterCombineGeo <- function(kw, nbr, geo){
   if(str_detect(as.String(geo),"[0-999]\\.[0-999]")==TRUE){
     tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE,geocode = geo, lang= "fr")
   }else if(as.String(geo)=="0"){
-    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE)
-  }else{
+    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE, lang = "fr")
+  }else if(as.String(geo)!=""){
     tweets <- rtweet::search_tweets(paste0(as.String(kw)+" AND "+as.String(geo)),nbr,include_rts = FALSE, lang = "fr")
+  }else{
+    tweets <- rtweet::search_tweets(as.String(kw),nbr,include_rts = FALSE, lang = "fr")
   }
 
   return(tweets)
