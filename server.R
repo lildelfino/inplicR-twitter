@@ -12,6 +12,7 @@ library(wordcloud)
 library(RColorBrewer)
 library(SPARQL)
 library(splus2R)
+library(textclean)
 
 ####################################################################################################################################
 # Text mining #
@@ -442,16 +443,14 @@ shinyServer(function(input, output, session) {
     #vérification qu'un token existe réellement
     get_token()
     removeModal()
+
   })
 
   #modification du token ou création d'un token
   observeEvent(input$new, {
     token <- twitterToken(input$appname,input$api_key,input$api_secret,input$bearer_token,input$access_token,input$access_token_secret)
-
-    #vérification de la validité du token (si le token est refusé par twitter il n'existera pas donc na)
     get_token()
     removeModal()
-    
 
   })
 
@@ -492,7 +491,6 @@ shinyServer(function(input, output, session) {
     newList$listTable <- data.frame()
     newList$listUser <- data.frame()
     kwList$kw <- data.frame()
-    kwList$index <- 0
   })
 
   #Déclenchement bouton ajouter par thématique
