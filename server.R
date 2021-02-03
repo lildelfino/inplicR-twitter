@@ -439,6 +439,7 @@ shinyServer(function(input, output, session) {
 
     #vérification qu'un token existe réellement
     get_token()
+    removeModal()
   })
 
   #modification du token ou création d'un token
@@ -446,11 +447,9 @@ shinyServer(function(input, output, session) {
     token <- twitterToken(input$appname,input$api_key,input$api_secret,input$bearer_token,input$access_token,input$access_token_secret)
 
     #vérification de la validité du token (si le token est refusé par twitter il n'existera pas donc na)
-    if (!is.na(token[["app"]][["secret"]])) {
-      removeModal()
-    } else {
-      showModal(dataModal(failed = TRUE))
-    }
+    get_token()
+    removeModal()
+    
 
   })
 
