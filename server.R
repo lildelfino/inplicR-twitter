@@ -13,8 +13,6 @@ library(RColorBrewer)
 library(SPARQL)
 library(splus2R)
 library(textclean)
-library(future)
-library(promises)
 
 ####################################################################################################################################
 # Text mining #
@@ -406,24 +404,6 @@ shinyServer(function(input, output, session) {
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
 
-  #création de l'affichage du token
-  tokenModal <- function(failed = FALSE) {
-    modalDialog(
-      textInput("appname", "Appname :"),
-      textInput("api_key", "Api key :"),
-      textInput("api_secret", "Api secret :"),
-      textInput("bearer_token", "bearer token :"),
-      textInput("access_token", "Access token :"),
-      textInput("access_token_secret", "Access token secret :"),
-      if (failed)
-        div(tags$b("Token invalide", style = "color: red;")),
-
-      footer = tagList(
-        actionButton("old","Utiliser l'ancien token"),
-        actionButton("new","Mettre à jour le token")
-      )
-    )
-  }
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
     modalDialog(
@@ -435,23 +415,6 @@ shinyServer(function(input, output, session) {
   }
 
   showModal(tokenModal())
-
-  #récupération de l'ancien token
-  observeEvent(input$old, {
-
-    #vérification qu'un token existe réellement
-    get_token()
-    removeModal()
-
-  })
-
-  #modification du token ou création d'un token
-  observeEvent(input$new, {
-    token <- twitterToken(input$appname,input$api_key,input$api_secret,input$bearer_token,input$access_token,input$access_token_secret)
-    get_token()
-    removeModal()
-
-  })
 
   observeEvent(input$deletePressed, {
     rowNum <- parseDeleteEvent(input$deletePressed)
