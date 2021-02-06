@@ -413,9 +413,7 @@ shinyServer(function(input, output, session) {
       footer = NULL
     )
   }
-
-  showModal(tokenModal())
-
+  
   observeEvent(input$deletePressed, {
     rowNum <- parseDeleteEvent(input$deletePressed)
 
