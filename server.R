@@ -198,7 +198,7 @@ searchTwitterTwoKWgeo <- function(kw1, geo, kw2, nbr){
   }else if(kw2==""){
     tweets <- searchTwitterCombineGeo(kw1,nbr,geo)
   }else{
-    tweets <- searchTwitterCombineGeo(paste0(kw1+" AND "+kw2),nbr,geo)
+    tweets <- searchTwitterCombineGeo(paste0(as.String(kw1)+" AND "+as.String(kw2)),nbr,geo)
   }
 
   return(tweets)
