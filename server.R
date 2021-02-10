@@ -308,9 +308,10 @@ extrairesClasses <- function(uri = "https://fuseki-inplic.herokuapp.com/ds/query
 #'
 #' @examples mot <- extractWord("http://www.semanticweb.org/matta/ontologies/2020/10/crisiskeywords#inondation")
 extractWord <- function(uri){
-  word <- stringr::str_extract(uri,"#[A-Z,a-z,_,',-,à,ê]+")
+  word <- stringr::str_extract(uri,"#[A-Z,a-z,_,',-,à,ê,é,è,ï,î,û,Ã©]+")
   word <- stringr::str_remove(word,"#")
   word <- stringr::str_replace_all(word,"_"," ")
+  word <- stringr::str_replace_all(word,"Ã©","é") #règle les problème avec l'accent é
   return(word)
 }
 
@@ -404,6 +405,7 @@ shinyServer(function(input, output, session) {
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
 
+
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
     modalDialog(
@@ -413,7 +415,24 @@ shinyServer(function(input, output, session) {
       footer = NULL
     )
   }
-  
+
+  #récupération de l'ancien token
+  observeEvent(input$old, {
+
+    #vérification qu'un token existe réellement
+    get_token()
+    removeModal()
+
+  })
+
+  #modification du token ou création d'un token
+  observeEvent(input$new, {
+    token <- twitterToken(input$appname,input$api_key,input$api_secret,input$bearer_token,input$access_token,input$access_token_secret)
+    get_token()
+    removeModal()
+
+  })
+
   observeEvent(input$deletePressed, {
     rowNum <- parseDeleteEvent(input$deletePressed)
 
@@ -518,15 +537,41 @@ shinyServer(function(input, output, session) {
   #lancement du text mining
   observeEvent(input$launch, {
 
-    for(i in(1:nrow(kwList$kw))){
+    if(as.String(kwList$kw[1,1])!="NA"){
+      #Recherche pour chaque ligne du tableau de mots clefs
+      for(i in(1:nrow(kwList$kw))){
 
-      newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw)))
+        newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw)))
 
 
+      }
+    }else{
+      showModal(errorModal())
     }
 
+
+
+
     if(nrow(newList$newList)!=0){
-      newList$listTable <- newList$newList[, colnames(newList$newList)[c(4,5,3,13,14,32)]]
+
+      #Réglagle pour permettre de classer par média
+
+      for(i in(1:nrow(newList$newList))){
+
+        if(is.na(newList$newList[[i,25]])){
+
+          newList$newList[[i,91]] <- "NA"
+
+        }else{
+
+          newList$newList[[i,91]] <- "Media"
+
+        }
+
+        colnames(newList$newList)[91] <- "media"
+      }
+
+      newList$listTable <- newList$newList[, colnames(newList$newList)[c(4,5,3,13,14,32,91,22)]]
       newList$listUser <- unique(newList$newList[, colnames(newList$newList)[c(4,73,74,75,83,84,78,81)]])
 
 
