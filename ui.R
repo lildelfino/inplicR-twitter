@@ -15,7 +15,7 @@ fluidPage(
                        textInput("kw","Mot-clef :")
       ),
       selectInput("Associer","Mots Associés : ",
-                  choices = c("aucun","detresse")),
+                  choices = c("aucun","detresse","impersonnel","personnel","sante","quotidien","pollution")),
       actionButton("add", "Ajouter aux mots-clefs"),
       hr(),
       sliderInput("numberTweets","Nombre de tweets max",
