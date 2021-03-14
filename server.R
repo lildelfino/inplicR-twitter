@@ -141,13 +141,12 @@ myTwitterToken <- function(){
 #' @param appname https://developer.twitter.com/
 #' @param api_key https://developer.twitter.com/
 #' @param api_secret https://developer.twitter.com/
-#' @param bearer_token https://developer.twitter.com/
 #' @param access_token https://developer.twitter.com/
 #' @param access_token_secret https://developer.twitter.com/
 #'
 #' @return the token
 #' @export
-twitterToken <- function(appname, api_key, api_secret, bearer_token, access_token, access_token_secret){
+twitterToken <- function(appname, api_key, api_secret, access_token, access_token_secret){
   return(rtweet::create_token(app = appname, api_key, api_secret, access_token = access_token, access_secret = access_token_secret))
 }
 
@@ -161,19 +160,19 @@ twitterToken <- function(appname, api_key, api_secret, bearer_token, access_toke
 #' @export
 #'
 #' @examples tweetsSparql <- searchTwitterSparql(requeteCrisis("inondation"),100,"Troyes")
-searchTwitterCombineGeo <- function(kw, nbr, geo){
+searchTwitterCombineGeo <- function(kw, nbr, geo, token){
   tweets <- data.frame()
   #si c'est un géocode => recherche localisée (https://www.coordonnees-gps.fr/)
   # si c'est un lieu ou un mot : recherche par combinaison
   # si geocode non remplis, "0" pour ne pas faire une recherche combinée ou geocodée
   if(str_detect(as.String(geo),"[0-999]\\.[0-999]")==TRUE){
-    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE,geocode = geo, lang= "fr")
+    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE,geocode = geo, lang= "fr", token = token)
   }else if(as.String(geo)=="0"){
-    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE, lang = "fr")
+    tweets <- rtweet::search_tweets(kw,nbr,include_rts = FALSE, lang = "fr", token = token)
   }else if(as.String(geo)!=""){
-    tweets <- rtweet::search_tweets(paste0(as.String(kw)+" AND "+as.String(geo)),nbr,include_rts = FALSE, lang = "fr")
+    tweets <- rtweet::search_tweets(paste0(as.String(kw)+" AND "+as.String(geo)),nbr,include_rts = FALSE, lang = "fr", token = token)
   }else{
-    tweets <- rtweet::search_tweets(as.String(kw),nbr,include_rts = FALSE, lang = "fr")
+    tweets <- rtweet::search_tweets(as.String(kw),nbr,include_rts = FALSE, lang = "fr", token = token)
   }
 
   return(tweets)
@@ -191,14 +190,14 @@ searchTwitterCombineGeo <- function(kw, nbr, geo){
 #' @export
 #'
 #' @examples tweets <- searchTwitterTwoKWgeo("covid","Lille","peur",100)
-searchTwitterTwoKWgeo <- function(kw1, geo, kw2, nbr){
+searchTwitterTwoKWgeo <- function(kw1, geo, kw2, nbr, token){
 
   if(str_detect(as.String(kw1),"@")){
-    tweets <- rtweet::get_timeline(kw1,nbr)
+    tweets <- rtweet::get_timeline(kw1,nbr, token = token)
   }else if(kw2==""){
-    tweets <- searchTwitterCombineGeo(kw1,nbr,geo)
+    tweets <- searchTwitterCombineGeo(kw1,nbr,geo, token = token)
   }else{
-    tweets <- searchTwitterCombineGeo(paste0(as.String(kw1)+" AND "+as.String(kw2)),nbr,geo)
+    tweets <- searchTwitterCombineGeo(paste0(as.String(kw1)+" AND "+as.String(kw2)),nbr,geo, token = token)
   }
 
   return(tweets)
@@ -404,7 +403,7 @@ shinyServer(function(input, output, session) {
 
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
-
+  errtk <- reactiveValues(err = FALSE)
 
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
@@ -416,22 +415,66 @@ shinyServer(function(input, output, session) {
     )
   }
 
-  #récupération de l'ancien token
-  observeEvent(input$old, {
+  tokenError <- function(){
+    modalDialog(
+      title = "Erreur",
+      "Clé incorrecte",
+      easyClose = TRUE,
+      footer = NULL
+    )
+  }
 
-    #vérification qu'un token existe réellement
-    get_token()
-    removeModal()
+  tokenSuccess <- function(){
+    modalDialog(
+      title = "Succès",
+      "Succès",
+      easyClose = TRUE,
+      footer = NULL
+    )
+  }
+
+  tokenModal <- function(failed = FALSE){
+    modalDialog(
+      title = "Twitter API",
+      textInput("API_key", "API_key", placeholder = "nvYE2ZRIWK5mB2Jjd07LWo6wF"),
+      textInput("API_key_secret", "API_key_secret", placeholder = 'PCGk9D5ab2BYTOqzLzGTYRQacxX0vQvo5FgZhzZKBXGdEskVL6'),
+      textInput("Access_token", "Access_token", placeholder = '377517541-qt9DcoYXoefqvL7NmgZY9i4nDXu30LqLL0mPmOMc'),
+      textInput("Access_token_secret", "Access_token_secret", placeholder = 'FpGCXHfxS2kDrq5HUpxaItymeO4pExyse6gbWMv8pT79y'),
+      easyClose = TRUE,
+      footer = tagList(modalButton("Annuler"),
+                       actionButton("api_valider", "Valider"))
+    )
+  }
+
+  observeEvent(input$api, {
+
+    showModal(tokenModal())
 
   })
 
-  #modification du token ou création d'un token
-  observeEvent(input$new, {
-    token <- twitterToken(input$appname,input$api_key,input$api_secret,input$bearer_token,input$access_token,input$access_token_secret)
-    get_token()
-    removeModal()
+  observeEvent(input$api_valider, {
+    token <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
+    tryCatch({
+      rtweet::search_tweets("a",n=1, token = token)
+    }, warning = function(war){
+      cat("erreur")
 
+      errtk$err <- TRUE
+      cat(err)
+      showModal(tokenError())
+    }, error = function(err){
+
+      errtk$err <- TRUE
+      showModal(tokenError())
+    }, finally = {
+      if(errtk$err==FALSE){
+        showModal(tokenSuccess())
+      }
+    }
+    )
   })
+
+
 
   observeEvent(input$deletePressed, {
     rowNum <- parseDeleteEvent(input$deletePressed)
@@ -541,7 +584,7 @@ shinyServer(function(input, output, session) {
       #Recherche pour chaque ligne du tableau de mots clefs
       for(i in(1:nrow(kwList$kw))){
 
-        newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw)))
+        newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw),token))
 
 
       }
