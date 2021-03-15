@@ -127,8 +127,10 @@ sentimentAnalysis <- function(corpus, lang){
 myTwitterToken <- function(){
 
   appname <- "Twitter Words Analysis"
-  api_key <- "nvYE2ZRIWK7mB2Jjd07LWo6wE"
-  api_secret <- "PCGk9D5ab2BYTOqzLzGTYRQacxX0vQvo5FgZhzZKBXGdEskVL6"
+  #api_key <- "nvYE2ZRIWK7mB2Jjd07LWo6wE"
+  api_key <- "mV386R0Wb3lsEQxZrt2j8KOak"
+  #api_secret <- "PCGk9D5ab2BYTOqzLzGTYRQacxX0vQvo5FgZhzZKBXGdEskVL6"
+  api_secret <- "Sz7n0TcYNbvXnBJjnHE85J5gWss1dF0AI5HLYw5xesR7MpbQZv"
   bearer_token <- "AAAAAAAAAAAAAAAAAAAAAE%2FkIQEAAAAA%2BGpy1ew8w2pPi%2FawDYDOCdxu4Ro%3DbpJpSljndKk89YratGFQWmP0jQDEI6OJKEyW6cEPNIpEy03b9r"
   access_token <- "366517541-qt9DcoYXoefqvL7NmgZY9i4nDXu30LqLL0mPmOMc"
   access_token_secret <- "FwGCXHfxS2kDnq5HUpxaItymeO4pExyse6gbWMv5pT79y"
@@ -397,13 +399,14 @@ deleteButtonColumnKW <- function(df, id, ...) {
                 ))
 }
 
-token <- myTwitterToken()
+
 
 shinyServer(function(input, output, session) {
 
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
   errtk <- reactiveValues(err = FALSE)
+  token <- reactiveValues(token = myTwitterToken())
 
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
@@ -453,9 +456,9 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$api_valider, {
-    token <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
+    token$token <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
     tryCatch({
-      rtweet::search_tweets("a",n=1, token = token)
+      rtweet::search_tweets("a",n=1, token = token$token)
     }, warning = function(war){
       cat("erreur")
 
@@ -584,7 +587,7 @@ shinyServer(function(input, output, session) {
       #Recherche pour chaque ligne du tableau de mots clefs
       for(i in(1:nrow(kwList$kw))){
 
-        newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw),token))
+        newList$newList <- rbind(newList$newList,searchTwitterTwoKWgeo(kwList$kw[i,1],kwList$kw[i,2],kwList$kw[i,3],input$numberTweets/nrow(kwList$kw),token$token))
 
 
       }
