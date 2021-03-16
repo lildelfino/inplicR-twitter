@@ -138,6 +138,7 @@ myTwitterToken <- function(){
   return(twitter_token)
 }
 
+
 #' Twitter token with generic API keys
 #'
 #' @param appname https://developer.twitter.com/
@@ -403,39 +404,6 @@ deleteButtonColumnKW <- function(df, id, ...) {
 
 shinyServer(function(input, output, session) {
 
-  kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
-  newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
-  errtk <- reactiveValues(err = FALSE)
-  token <- reactiveValues(token = myTwitterToken())
-
-  #création de l'affichage d'erreur de recherche
-  errorModal <- function(failed = FALSE) {
-    modalDialog(
-      title = "Erreur de recherche",
-      "Aucun tweet n'a été trouvé",
-      easyClose = TRUE,
-      footer = NULL
-    )
-  }
-
-  tokenError <- function(){
-    modalDialog(
-      title = "Erreur",
-      "Clé incorrecte",
-      easyClose = TRUE,
-      footer = NULL
-    )
-  }
-
-  tokenSuccess <- function(){
-    modalDialog(
-      title = "Succès",
-      "Succès",
-      easyClose = TRUE,
-      footer = NULL
-    )
-  }
-
   tokenModal <- function(failed = FALSE){
     modalDialog(
       title = "Twitter API",
@@ -446,6 +414,61 @@ shinyServer(function(input, output, session) {
       easyClose = TRUE,
       footer = tagList(modalButton("Annuler"),
                        actionButton("api_valider", "Valider"))
+    )
+  }
+
+  token <- reactiveValues(token = myTwitterToken())
+
+  readKey <- function(){
+    tryCatch({
+      k <- readLines("C://key.txt")
+      t <- str_split_fixed(k," ",4)
+      token$token <- twitterToken("Twitter words analysis",tk[1],tk[2],tk[3],tk[4])
+    }, warning = function(war){
+      showModal(tokenModal())
+      output$key <- renderText({"pas de clef API valide"})
+    }, error = function(err){
+      showModal(tokenModal())
+      output$key <- renderText({"pas de clef API valide"})
+    }, finally = {
+      return(t)
+    })
+  }
+  tk <- readKey()
+
+  kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
+  newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
+  errtk <- reactiveValues(err = FALSE)
+
+
+  #création de l'affichage d'erreur de recherche
+  errorModal <- function(failed = FALSE) {
+
+    modalDialog(
+      title = "Erreur de recherche",
+      "Aucun tweet n'a été trouvé",
+      easyClose = TRUE,
+      footer = NULL
+    )
+  }
+
+  tokenError <- function(){
+    output$key <- renderText({"pas de clef API valide"})
+    modalDialog(
+      title = "Erreur",
+      "Clé incorrecte",
+      easyClose = TRUE,
+      footer = NULL
+    )
+  }
+
+  tokenSuccess <- function(){
+    output$key <- renderText({" "})
+    modalDialog(
+      title = "Succès",
+      "Succès",
+      easyClose = TRUE,
+      footer = NULL
     )
   }
 
@@ -472,6 +495,9 @@ shinyServer(function(input, output, session) {
     }, finally = {
       if(errtk$err==FALSE){
         showModal(tokenSuccess())
+        fileConn<-file("C://key.txt")
+        writeLines(c(input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret), fileConn)
+        close(fileConn)
       }
     }
     )
