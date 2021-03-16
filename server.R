@@ -127,9 +127,7 @@ sentimentAnalysis <- function(corpus, lang){
 myTwitterToken <- function(){
 
   appname <- "Twitter Words Analysis"
-  #api_key <- "nvYE2ZRIWK7mB2Jjd07LWo6wE"
   api_key <- "mV386R0Wb3lsEQxZrt2j8KOak"
-  #api_secret <- "PCGk9D5ab2BYTOqzLzGTYRQacxX0vQvo5FgZhzZKBXGdEskVL6"
   api_secret <- "Sz7n0TcYNbvXnBJjnHE85J5gWss1dF0AI5HLYw5xesR7MpbQZv"
   bearer_token <- "AAAAAAAAAAAAAAAAAAAAAE%2FkIQEAAAAA%2BGpy1ew8w2pPi%2FawDYDOCdxu4Ro%3DbpJpSljndKk89YratGFQWmP0jQDEI6OJKEyW6cEPNIpEy03b9r"
   access_token <- "366517541-qt9DcoYXoefqvL7NmgZY9i4nDXu30LqLL0mPmOMc"
@@ -419,12 +417,9 @@ shinyServer(function(input, output, session) {
 
   token <- reactiveValues(token = myTwitterToken())
 
-  readKey <- function(){
-
+  init <- function(){
     tryCatch({
-      k <- readLines("C://key.txt")
-      t <- str_split_fixed(k," ",4)
-      token$token <- twitterToken("Twitter words analysis",as.String(t[1]),as.String(t[2]),as.String(t[3]),as.String(t[4]))
+      rtweet::search_tweets("a",n=1, token = token$token)
     }, warning = function(war){
       showModal(tokenModal())
       output$key <- renderText({"pas de clef API valide"})
@@ -433,11 +428,10 @@ shinyServer(function(input, output, session) {
       showModal(tokenModal())
       output$key <- renderText({"pas de clef API valide"})
     }, finally = {
-      return(t)
     })
   }
-  tk <- readKey()
-
+  init()
+  
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
   errtk <- reactiveValues(err = FALSE)
