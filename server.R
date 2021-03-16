@@ -420,14 +420,16 @@ shinyServer(function(input, output, session) {
   token <- reactiveValues(token = myTwitterToken())
 
   readKey <- function(){
+
     tryCatch({
       k <- readLines("C://key.txt")
       t <- str_split_fixed(k," ",4)
-      token$token <- twitterToken("Twitter words analysis",tk[1],tk[2],tk[3],tk[4])
+      token$token <- twitterToken("Twitter words analysis",as.String(t[1]),as.String(t[2]),as.String(t[3]),as.String(t[4]))
     }, warning = function(war){
       showModal(tokenModal())
       output$key <- renderText({"pas de clef API valide"})
     }, error = function(err){
+      cat("ici")
       showModal(tokenModal())
       output$key <- renderText({"pas de clef API valide"})
     }, finally = {
