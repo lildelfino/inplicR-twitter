@@ -1,6 +1,7 @@
 fluidPage(
   titlePanel("Inplic R twitter analysis"),
   actionButton("api", "Changer la clef d'API"),
+  span(textOutput("key"), style="color:red"),
   hr(),
 
   sidebarLayout(
