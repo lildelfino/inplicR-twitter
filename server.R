@@ -13,6 +13,7 @@ library(RColorBrewer)
 library(SPARQL)
 library(splus2R)
 library(textclean)
+library(RMySQL)
 
 ####################################################################################################################################
 # Text mining #
@@ -120,21 +121,6 @@ sentimentAnalysis <- function(corpus, lang){
 # Twitter #
 ###########
 
-#' get a twitter token with my personnal API keys
-#'
-#' @return the token
-#' @export
-myTwitterToken <- function(){
-
-  appname <- "Twitter Words Analysis"
-  api_key <- "mV386R0Wb3lsEQxZrt2j8KOak"
-  api_secret <- "Sz7n0TcYNbvXnBJjnHE85J5gWss1dF0AI5HLYw5xesR7MpbQZv"
-  bearer_token <- "AAAAAAAAAAAAAAAAAAAAAE%2FkIQEAAAAA%2BGpy1ew8w2pPi%2FawDYDOCdxu4Ro%3DbpJpSljndKk89YratGFQWmP0jQDEI6OJKEyW6cEPNIpEy03b9r"
-  access_token <- "366517541-qt9DcoYXoefqvL7NmgZY9i4nDXu30LqLL0mPmOMc"
-  access_token_secret <- "FwGCXHfxS2kDnq5HUpxaItymeO4pExyse6gbWMv5pT79y"
-  twitter_token <- rtweet::create_token(app = appname, api_key, api_secret, access_token = access_token, access_secret = access_token_secret)
-  return(twitter_token)
-}
 
 
 #' Twitter token with generic API keys
@@ -415,27 +401,30 @@ shinyServer(function(input, output, session) {
     )
   }
 
-  token <- reactiveValues(token = myTwitterToken())
+  #connection à la BDD cloudDB (connectée à heroku)
+  DB <- RMySQL::dbConnect(MySQL(), user = "b7d2b3749f8e8a", host = "eu-cdbr-west-01.cleardb.com", password = "26371387", dbname = "heroku_c8d54b00aad5131")
+  k <- RMySQL::dbReadTable(DB, "twikey")
+  deco <- dbDisconnect(DB)
 
-  init <- function(){
-    tryCatch({
-      rtweet::search_tweets("a",n=1, token = token$token)
-    }, warning = function(war){
-      showModal(tokenModal())
-      output$key <- renderText({"pas de clef API valide"})
-    }, error = function(err){
-      cat("ici")
-      showModal(tokenModal())
-      output$key <- renderText({"pas de clef API valide"})
-    }, finally = {
-    })
-  }
-  init()
-  
+  token <- reactiveValues(token = twitterToken("Twitter words analysis",as.String(k[1,2]),as.String(k[1,3]),as.String(k[1,4]),as.String(k[1,5])))
   kwList <- reactiveValues(kw = data.frame(matrix(ncol = 3)),index = 0)
   newList <- reactiveValues(newList = data.frame(), listTable = data.frame(), listUser = data.frame())
   errtk <- reactiveValues(err = FALSE)
 
+  #lecture des clefs
+    tryCatch({
+
+      rtweet::search_tweets("a",n=1, token = isolate(token$token))
+    }, warning = function(war){
+      print(war)
+      showModal(tokenModal())
+      output$key <- renderText({"pas de clef API valide"})
+    }, error = function(err){
+      print(err)
+      showModal(tokenModal())
+      output$key <- renderText({"pas de clef API valide"})
+    }, finally = {
+    })
 
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
@@ -475,30 +464,33 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$api_valider, {
+    DB <- RMySQL::dbConnect(MySQL(), user = "b7d2b3749f8e8a", host = "eu-cdbr-west-01.cleardb.com", password = "26371387", dbname = "heroku_c8d54b00aad5131")
     token$token <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
+    k <- data.frame(api_key = input$API_key, api_key_secret = input$API_key_secret, access_token = input$Access_token, access_token_secret = input$Access_token_secret)
     tryCatch({
       rtweet::search_tweets("a",n=1, token = token$token)
     }, warning = function(war){
-      cat("erreur")
 
       errtk$err <- TRUE
-      cat(err)
+      cat(war)
       showModal(tokenError())
     }, error = function(err){
 
       errtk$err <- TRUE
+      cat(err)
       showModal(tokenError())
     }, finally = {
       if(errtk$err==FALSE){
         showModal(tokenSuccess())
-        fileConn<-file("C://key.txt")
-        writeLines(c(input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret), fileConn)
-        close(fileConn)
+        #dbWriteTable(DB, "twitter", k, overwrite = TRUE)
+        dbSendQuery(DB, paste0("UPDATE twikey SET api_key = '",input$API_key,"', api_key_secret = '",input$API_key_secret,"', access_token = '",input$Access_token,"', access_token_secret = '",input$Access_token_secret,"' WHERE row_names = 1"))
       }
+
+      deco <- dbDisconnect(DB)
+      cat(deco)
     }
     )
   })
-
 
 
   observeEvent(input$deletePressed, {
