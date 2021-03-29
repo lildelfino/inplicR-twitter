@@ -412,19 +412,19 @@ shinyServer(function(input, output, session) {
   errtk <- reactiveValues(err = FALSE)
 
   #lecture des clefs
-    tryCatch({
+  tryCatch({
 
-      rtweet::search_tweets("a",n=1, token = isolate(token$token))
-    }, warning = function(war){
-      print(war)
-      showModal(tokenModal())
-      output$key <- renderText({"pas de clef API valide"})
-    }, error = function(err){
-      print(err)
-      showModal(tokenModal())
-      output$key <- renderText({"pas de clef API valide"})
-    }, finally = {
-    })
+    rtweet::search_tweets("a",n=1, token = isolate(token$token))
+  }, warning = function(war){
+    print(war)
+    showModal(tokenModal())
+    output$key <- renderText({"pas de clef API valide"})
+  }, error = function(err){
+    print(err)
+    showModal(tokenModal())
+    output$key <- renderText({"pas de clef API valide"})
+  }, finally = {
+  })
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
 
@@ -614,24 +614,24 @@ shinyServer(function(input, output, session) {
 
     if(nrow(newList$newList)!=0){
 
-      #Réglagle pour permettre de classer par média
+      #Réglage pour permettre de classer par média
 
-      for(i in(1:nrow(newList$newList))){
+      # for(i in(1:nrow(newList$newList))){
+      #
+      #   if(is.na(newList$newList[[i,25]])){
+      #
+      #     newList$newList[[i,91]] <- "NA"
+      #
+      #   }else{
+      #
+      #     newList$newList[[i,91]] <- "Media"
+      #
+      #   }
+      #
+      #   colnames(newList$newList)[91] <- "media"
+      # }
 
-        if(is.na(newList$newList[[i,25]])){
-
-          newList$newList[[i,91]] <- "NA"
-
-        }else{
-
-          newList$newList[[i,91]] <- "Media"
-
-        }
-
-        colnames(newList$newList)[91] <- "media"
-      }
-
-      newList$listTable <- newList$newList[, colnames(newList$newList)[c(4,5,3,13,14,32,91,22)]]
+      newList$listTable <- newList$newList[, colnames(newList$newList)[c(4,5,3,13,14,32,22)]]
       newList$listUser <- unique(newList$newList[, colnames(newList$newList)[c(4,73,74,75,83,84,78,81)]])
 
 
