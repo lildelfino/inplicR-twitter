@@ -472,12 +472,12 @@ shinyServer(function(input, output, session) {
     }, warning = function(war){
 
       errtk$err <- TRUE
-      cat(war)
+      print(war)
       showModal(tokenError())
     }, error = function(err){
 
       errtk$err <- TRUE
-      cat(err)
+      print(err)
       showModal(tokenError())
     }, finally = {
       if(errtk$err==FALSE){
