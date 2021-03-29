@@ -425,7 +425,6 @@ shinyServer(function(input, output, session) {
       output$key <- renderText({"pas de clef API valide"})
     }, finally = {
     })
-
   #création de l'affichage d'erreur de recherche
   errorModal <- function(failed = FALSE) {
 
@@ -438,7 +437,7 @@ shinyServer(function(input, output, session) {
   }
 
   tokenError <- function(){
-    output$key <- renderText({"pas de clef API valide"})
+    #output$key <- renderText({"pas de clef API valide"})
     modalDialog(
       title = "Erreur",
       "Clé incorrecte",
@@ -465,10 +464,10 @@ shinyServer(function(input, output, session) {
 
   observeEvent(input$api_valider, {
     DB <- RMySQL::dbConnect(MySQL(), user = "b7d2b3749f8e8a", host = "eu-cdbr-west-01.cleardb.com", password = "26371387", dbname = "heroku_c8d54b00aad5131")
-    token$token <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
-    k <- data.frame(api_key = input$API_key, api_key_secret = input$API_key_secret, access_token = input$Access_token, access_token_secret = input$Access_token_secret)
+    token_temp <- twitterToken("Twitter words analysis",input$API_key,input$API_key_secret,input$Access_token,input$Access_token_secret)
+    #k <- data.frame(api_key = input$API_key, api_key_secret = input$API_key_secret, access_token = input$Access_token, access_token_secret = input$Access_token_secret)
     tryCatch({
-      rtweet::search_tweets("a",n=1, token = token$token)
+      rtweet::search_tweets("a",n=1, token = token_temp)
     }, warning = function(war){
 
       errtk$err <- TRUE
@@ -481,6 +480,7 @@ shinyServer(function(input, output, session) {
       showModal(tokenError())
     }, finally = {
       if(errtk$err==FALSE){
+        token$token <- token_temp
         showModal(tokenSuccess())
         #dbWriteTable(DB, "twitter", k, overwrite = TRUE)
         dbSendQuery(DB, paste0("UPDATE twikey SET api_key = '",input$API_key,"', api_key_secret = '",input$API_key_secret,"', access_token = '",input$Access_token,"', access_token_secret = '",input$Access_token_secret,"' WHERE row_names = 1"))
